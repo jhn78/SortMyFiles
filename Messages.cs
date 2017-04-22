@@ -45,7 +45,11 @@ namespace SortMyFiles
     
     public class FileDateDetermined : IEvent
     {
-        public DateTime? FileDate { get; set; }
+        public DateTime FileDate { get; set; }
+    }
+
+    public class FileDateNotDetermined : IEvent
+    {
     }
 
     public class AnalyzeFile : ICommand

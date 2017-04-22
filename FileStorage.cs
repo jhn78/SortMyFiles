@@ -31,6 +31,11 @@ namespace SortMyFiles
             yield return new PlaceFile() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TakenAt = evt.FileDate };
         }
 
+        public IEnumerable<ICommand> Handle(FileDateNotDetermined evt)
+        {
+            yield return new PlaceFile() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TakenAt = null };
+        }
+
         public IEnumerable<ICommand> Handle(FilePlaced evt)
         {
             if (!evt.IsDuplicate) { 
