@@ -12,7 +12,7 @@ namespace SortMyFiles
 {
     public class FileProcessor : 
         ICommandHandler<FilterFile>,
-        ICommandHandler<AnalyzeFile>
+        ICommandHandler<AnalyzeFile>        
     {
         public IEnumerable<IEvent> Handle(AnalyzeFile cmd)
         {

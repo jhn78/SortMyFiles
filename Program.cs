@@ -31,7 +31,7 @@ namespace SortMyFiles
             Queue.Register<FileDateNotDetermined>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
             Queue.Register<PlaceFile>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
             Queue.Register<FilePlaced>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<HandleDuplicate>().Subscribe(m => Console.WriteLine($"duplicate detected  {m.TargetFile.File.Name}"));
+            Queue.Register<HandleDuplicate>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
             Queue.Register<SourceFilesRead>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
             Queue.Register<CopyFiles>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
             Queue.Register<FilesCopied>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
