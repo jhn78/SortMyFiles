@@ -21,11 +21,6 @@ namespace SortMyFiles
 
     }
 
-    public class SortFile : ICommand
-    {
-        public FileInfo File { get; set; }
-    }
-
     public class FileFound : IEvent
     {
         public FileInfo File { get; set; }

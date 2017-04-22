@@ -7,64 +7,66 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    public interface ICommandHandler<ICommand, IEvent>
+    public interface ICommandHandler<TCommand> where TCommand : ICommand
     {
-        IEvent Handle(ICommand command);
+        IEnumerable<IEvent> Handle(TCommand command);
     }
 
-    public interface IEventHandler<IEvent, ICommand>
+    public interface IEventHandler<TEvent> where TEvent : IEvent
     {
-        ICommand Handle(IEvent evt);
+        IEnumerable<ICommand> Handle(TEvent evt);
     }
 
     public class FileStorage : 
-        IEventHandler<FileFound, FilterFile>,        
-        IEventHandler<SourceFilesRead, CopyFiles>,
-        IEventHandler<FileDateDetermined, PlaceFile>,
-        IEventHandler<FileFiltered, AnalyzeFile>,
-        IEventHandler<FilePlaced, HandleDuplicate>
+        IEventHandler<FileFound>,        
+        IEventHandler<SourceFilesRead>,
+        IEventHandler<FileDateDetermined>,
+        IEventHandler<FileFiltered>,
+        IEventHandler<FilePlaced>
     {
         Dictionary<Guid, FileInfo> store = new Dictionary<Guid, FileInfo>();
 
-        public PlaceFile Handle(FileDateDetermined evt)
+        public IEnumerable<ICommand> Handle(FileDateDetermined evt)
         {
-            return new PlaceFile() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TakenAt = evt.FileDate };
+            yield return new PlaceFile() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TakenAt = evt.FileDate };
         }
 
-        public HandleDuplicate Handle(FilePlaced evt)
+        public IEnumerable<ICommand> Handle(FilePlaced evt)
         {
-            if (!evt.IsDuplicate)
-                return null;
+            if (!evt.IsDuplicate) { 
+                yield return null;
+                yield break;
+            }
 
-            Console.WriteLine("duplicate detected");
-
-            return new HandleDuplicate() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TargetFile = evt.Target };
+            yield return new HandleDuplicate() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TargetFile = evt.Target };
         }
 
-        public AnalyzeFile Handle(FileFiltered evt)
+        public IEnumerable<ICommand> Handle(FileFiltered evt)
         {
             var file = store[evt.CorrelationId];
 
-            if (evt.KeepFile)
-                return new AnalyzeFile() { CorrelationId = evt.CorrelationId, File = file };
+            if (evt.KeepFile) { 
+                yield return new AnalyzeFile() { CorrelationId = evt.CorrelationId, File = file };
+                yield break;
+            }
 
             Console.WriteLine($"File ignored: {Path.Combine(file.Path,file.Name)}");
 
             store.Remove(evt.CorrelationId);
 
-            return null;
+            yield break;
         }
         
-        public FilterFile Handle(FileFound cmd)
+        public IEnumerable<ICommand> Handle(FileFound cmd)
         {
             store.Add(cmd.CorrelationId, cmd.File);
 
-            return new FilterFile { File = cmd.File, CorrelationId = cmd.CorrelationId };
+            yield return new FilterFile { File = cmd.File, CorrelationId = cmd.CorrelationId };
         }
 
-        public CopyFiles Handle(SourceFilesRead cmd)
+        public IEnumerable<ICommand> Handle(SourceFilesRead cmd)
         {
-            return new CopyFiles() { CorrelationId = cmd.CorrelationId };
-        }
+            yield return new CopyFiles() { CorrelationId = cmd.CorrelationId };
+        }        
     }
 }

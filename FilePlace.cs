@@ -10,19 +10,20 @@ namespace SortMyFiles
 {
     class FilePlaceManager
     {
-        public static FilePlaced Handle(PlaceFile cmd)
+        public static IEnumerable<IEvent> Handle(PlaceFile cmd)
         {
-            return Get(cmd.TakenAt.HasValue ? cmd.TakenAt.Value : new DateTime(0)).Handle(cmd);
+            return Get(cmd).Handle(cmd);
         }
 
-        public static FilesCopied Handle(CopyFiles cmd)
+        public static IEnumerable<IEvent> Handle(CopyFiles cmd)
         {
             var moved = places.Values
-                .Select(p => p.Handle(cmd))
+                .SelectMany(p => p.Handle(cmd))
+                .OfType<FilesCopied>() 
                 .SelectMany(p => p.Files)
                 .ToList();
 
-            return new FilesCopied() { Files = moved, CorrelationId = cmd.CorrelationId };
+            yield return new FilesCopied() { Files = moved, CorrelationId = cmd.CorrelationId };
         }
 
         static Dictionary<DateTime, FilePlace> places = new Dictionary<DateTime, FilePlace>();
@@ -36,11 +37,16 @@ namespace SortMyFiles
 
             return places[key];
         }
+
+        public static FilePlace Get(PlaceFile cmd)
+        {
+            return Get(cmd.TakenAt.HasValue ? cmd.TakenAt.Value : new DateTime(0));
+        }
     }
 
     class FilePlace :
-        ICommandHandler<PlaceFile, FilePlaced>,
-        ICommandHandler<CopyFiles, FilesCopied>
+        ICommandHandler<PlaceFile>,
+        ICommandHandler<CopyFiles>
     {
         static string BasePath = @"e:\_test_\out";
 
@@ -55,7 +61,7 @@ namespace SortMyFiles
             folder = Path.Combine(BasePath, $"{key.Year.ToString("0000")}_{key.Month.ToString("00")}");
         }
 
-        public FilesCopied Handle(CopyFiles command)
+        public IEnumerable<IEvent> Handle(CopyFiles command)
         {
             Directory.CreateDirectory(folder);
 
@@ -68,22 +74,24 @@ namespace SortMyFiles
                     return f.Item1;
                 });
 
-            return new FilesCopied() { Files = moved, CorrelationId = command.CorrelationId };
+            yield return new FilesCopied() { Files = moved, CorrelationId = command.CorrelationId };
         }
 
-        public FilePlaced Handle(PlaceFile command)
+        public IEnumerable<IEvent> Handle(PlaceFile command)
         {
             var md5 = getMD5(command.File);
 
             var duplicate = store.Values.FirstOrDefault(v => v.Item4 == md5);
-            if (duplicate != null)
-                return new FilePlaced() { CorrelationId = command.CorrelationId, Target = duplicate.Item3, IsDuplicate = true };
+            if (duplicate != null) { 
+                yield return new FilePlaced() { CorrelationId = command.CorrelationId, Target = duplicate.Item3, IsDuplicate = true };
+                yield break;
+            }
 
             var target = new TargetFileInfo() { File = new FileInfo() { Name = getNextName(command.File.Name), Path = folder }, SortDate = key };
 
             store.Add(command.CorrelationId, Tuple.Create(command.CorrelationId, command.File, target, md5));
 
-            return new FilePlaced() { Target = target, CorrelationId = command.CorrelationId, IsDuplicate = false };
+            yield return new FilePlaced() { Target = target, CorrelationId = command.CorrelationId, IsDuplicate = false };
         }
 
         int names = 1;

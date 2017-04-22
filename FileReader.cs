@@ -7,16 +7,29 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    class FileReader 
+    class FileReader : ICommandHandler<ReadFiles>
     {
-        public IEnumerable<FileFound> Handle(ReadFiles cmd)
+        public IEnumerable<IEvent> Handle(ReadFiles cmd)
         {
-            foreach (var file in Directory.GetFiles(cmd.RootPath, "*.*").ToList())
-                yield return new FileFound() { File = new FileInfo() { Name = Path.GetFileName(file), Path = cmd.RootPath }, CorrelationId = Guid.NewGuid() };
-                            
-            foreach (var dir in Directory.GetDirectories(cmd.RootPath))
-                foreach (var found in Handle(new ReadFiles() { RootPath = dir, CorrelationId = cmd.CorrelationId }))
-                    yield return found;            
+            var found = ReadFiles(cmd.RootPath);
+
+            if (found.Count() == 0)  
+                Console.WriteLine($"no files found at {cmd.RootPath}");
+
+            foreach (var f in found)
+                yield return f;
+
+            yield return new SourceFilesRead() { CorrelationId = cmd.CorrelationId };
+        }
+
+        IEnumerable<FileFound> ReadFiles(string root)
+        {
+            foreach (var file in Directory.GetFiles(root, "*.*").ToList())
+                yield return new FileFound() { File = new FileInfo() { Name = Path.GetFileName(file), Path = root }, CorrelationId = Guid.NewGuid() };
+
+            foreach (var dir in Directory.GetDirectories(root))
+                foreach (var found in ReadFiles(dir))
+                    yield return found;
         }
     }
 }
