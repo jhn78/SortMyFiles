@@ -15,8 +15,6 @@ namespace SortMyFiles
         static void Main(string[] args)
         {
             Queue = new Queue();
-
-            var id = Guid.NewGuid();
             
             var fs = new FileStorage();
             var fp = new FileProcessor();
@@ -36,7 +34,7 @@ namespace SortMyFiles
             Register<CopyFiles>(fm);
             Register<FilesCopied>(fs);
 
-            Queue.Publish(new ReadFiles() { RootPath = SourcePath });
+            Queue.Publish(new ReadFiles() { RootPath = SourcePath, CorrelationId = Guid.NewGuid() });
             
             Console.ReadKey();
         }
