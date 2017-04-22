@@ -34,7 +34,7 @@ namespace SortMyFiles
             Queue.Register<HandleDuplicate>().Subscribe(m => Console.WriteLine($"duplicate detected  {m.TargetFile.File.Name}"));
             Queue.Register<SourceFilesRead>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
             Queue.Register<CopyFiles>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
-            Queue.Register<FilesCopied>().Subscribe(m => Console.WriteLine("done"));
+            Queue.Register<FilesCopied>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
 
             Queue.Publish(new ReadFiles() { RootPath = SourcePath });
             

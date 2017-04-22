@@ -22,7 +22,8 @@ namespace SortMyFiles
         IEventHandler<SourceFilesRead>,
         IEventHandler<FileDateDetermined>,
         IEventHandler<FileFiltered>,
-        IEventHandler<FilePlaced>
+        IEventHandler<FilePlaced>,
+        IEventHandler<FilesCopied>
     {
         Dictionary<Guid, FileInfo> store = new Dictionary<Guid, FileInfo>();
 
@@ -36,6 +37,20 @@ namespace SortMyFiles
             yield return new PlaceFile() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TakenAt = null };
         }
 
+        public IEnumerable<ICommand> Handle(FilesCopied evt)
+        {
+            evt.Files
+                .ToList()
+                .ForEach(f => store.Remove(f));
+
+            if (store.Count() != 0)
+                Console.WriteLine($"Files remain: {store.Count()}");
+
+            Console.WriteLine("done");
+
+            yield break;
+        }
+        
         public IEnumerable<ICommand> Handle(FilePlaced evt)
         {
             if (!evt.IsDuplicate) { 
