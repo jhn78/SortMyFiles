@@ -8,27 +8,13 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    class FilePlaceManager
+    class FilePlaceManager :
+        ICommandHandler<PlaceFile>,
+        ICommandHandler<CopyFiles>
     {
-        public static IEnumerable<IEvent> Handle(PlaceFile cmd)
-        {
-            return Get(cmd).Handle(cmd);
-        }
-
-        public static IEnumerable<IEvent> Handle(CopyFiles cmd)
-        {
-            var moved = places.Values
-                .SelectMany(p => p.Handle(cmd))
-                .OfType<FilesCopied>() 
-                .SelectMany(p => p.Files)
-                .ToList();
-
-            yield return new FilesCopied() { Files = moved, CorrelationId = cmd.CorrelationId };
-        }
-
         static Dictionary<DateTime, FilePlace> places = new Dictionary<DateTime, FilePlace>();
 
-        public static FilePlace Get(DateTime date)
+        static FilePlace Get(DateTime date)
         {
             var key = new DateTime(date.Year, date.Month, 1);
 
@@ -38,10 +24,26 @@ namespace SortMyFiles
             return places[key];
         }
 
-        public static FilePlace Get(PlaceFile cmd)
+        static FilePlace Get(PlaceFile cmd)
         {
             return Get(cmd.TakenAt.HasValue ? cmd.TakenAt.Value : new DateTime(0));
         }
+
+        public IEnumerable<IEvent> Handle(PlaceFile cmd)
+        {
+            return Get(cmd).Handle(cmd);
+        }
+
+        public IEnumerable<IEvent> Handle(CopyFiles cmd)
+        {
+            var moved = places.Values
+                .SelectMany(p => p.Handle(cmd))
+                .OfType<FilesCopied>() 
+                .SelectMany(p => p.Files)
+                .ToList();
+
+            yield return new FilesCopied() { Files = moved, CorrelationId = cmd.CorrelationId };
+        }        
     }
 
     class FilePlace :

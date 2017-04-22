@@ -20,6 +20,7 @@ namespace SortMyFiles
             
             var fs = new FileStorage();
             var fp = new FileProcessor();
+            var fm = new FilePlaceManager();
 
             Queue.Register<ReadFiles>().Subscribe(m => Queue.PublishAll(new FileReader().Handle(m)));
             Queue.Register<FileFound>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
@@ -27,11 +28,11 @@ namespace SortMyFiles
             Queue.Register<FileFiltered>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
             Queue.Register<AnalyzeFile>().Subscribe(m => Queue.PublishAll(fp.Handle(m)));
             Queue.Register<FileDateDetermined>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<PlaceFile>().Subscribe(m => Queue.PublishAll(FilePlaceManager.Handle(m)));
+            Queue.Register<PlaceFile>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
             Queue.Register<FilePlaced>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
             Queue.Register<HandleDuplicate>().Subscribe(m => Console.WriteLine($"duplicate detected  {m.TargetFile.File.Name}"));
             Queue.Register<SourceFilesRead>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<CopyFiles>().Subscribe(m => Queue.PublishAll(FilePlaceManager.Handle(m)));
+            Queue.Register<CopyFiles>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
             Queue.Register<FilesCopied>().Subscribe(m => Console.WriteLine("done"));
 
             Queue.Publish(new ReadFiles() { RootPath = SourcePath });
