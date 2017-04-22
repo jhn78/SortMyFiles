@@ -22,23 +22,41 @@ namespace SortMyFiles
             var fp = new FileProcessor();
             var fm = new FilePlaceManager();
 
-            Queue.Register<ReadFiles>().Subscribe(m => Queue.PublishAll(new FileReader().Handle(m)));
-            Queue.Register<FileFound>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<FilterFile>().Subscribe(m => Queue.PublishAll(fp.Handle(m)));
-            Queue.Register<FileFiltered>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<AnalyzeFile>().Subscribe(m => Queue.PublishAll(fp.Handle(m)));
-            Queue.Register<FileDateDetermined>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<FileDateNotDetermined>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<PlaceFile>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
-            Queue.Register<FilePlaced>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<HandleDuplicate>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
-            Queue.Register<SourceFilesRead>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
-            Queue.Register<CopyFiles>().Subscribe(m => Queue.PublishAll(fm.Handle(m)));
-            Queue.Register<FilesCopied>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
+            Register<ReadFiles>(new FileReader());
+            Register<FileFound>(fs);
+            Register<FilterFile>(fp);
+            Register<FileFiltered>(fs);
+            Register<AnalyzeFile>(fp);
+            Register<FileDateDetermined>(fs);
+            Register<FileDateNotDetermined>(fs);
+            Register<PlaceFile>(fm);
+            Register<FilePlaced>(fs);
+            Register<HandleDuplicate>(fm);
+            Register<SourceFilesRead>(fs);
+            Register<CopyFiles>(fm);
+            Register<FilesCopied>(fs);
 
             Queue.Publish(new ReadFiles() { RootPath = SourcePath });
             
             Console.ReadKey();
         }
+
+        public static void Register<TIn>(IMessageHandler<TIn, IMessage> handler) where TIn : IMessage
+        {
+            Queue.Register<TIn>().Subscribe(m => Queue.PublishAll(handler.Handle(m)));
+        }
+    }
+        
+    public interface IMessageHandler<TIn, out TOut> where TIn : IMessage where TOut : IMessage
+    {
+        IEnumerable<TOut> Handle(TIn message);
+    }
+
+    public interface ICommandHandler<TCommand> : IMessageHandler<TCommand, IEvent> where TCommand : ICommand
+    {   
+    }
+
+    public interface IEventHandler<TEvent> : IMessageHandler<TEvent, ICommand> where TEvent : IEvent
+    {
     }
 }

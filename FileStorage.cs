@@ -7,20 +7,11 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    public interface ICommandHandler<TCommand> where TCommand : ICommand
-    {
-        IEnumerable<IEvent> Handle(TCommand command);
-    }
-
-    public interface IEventHandler<TEvent> where TEvent : IEvent
-    {
-        IEnumerable<ICommand> Handle(TEvent evt);
-    }
-
     public class FileStorage : 
         IEventHandler<FileFound>,        
         IEventHandler<SourceFilesRead>,
         IEventHandler<FileDateDetermined>,
+        IEventHandler<FileDateNotDetermined>,
         IEventHandler<FileFiltered>,
         IEventHandler<FilePlaced>,
         IEventHandler<FilesCopied>
