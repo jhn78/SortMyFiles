@@ -18,7 +18,7 @@ namespace SortMyFiles
             
             var fs = new FileStorage();
             var fp = new FileProcessor();
-            var fm = new FilePlaceManager();
+            var fm = new FileWriter();
 
             Register<ReadFiles>(new FileReader());
             Register<FileFound>(fs);

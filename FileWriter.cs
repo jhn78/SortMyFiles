@@ -8,26 +8,26 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    class FilePlaceManager :
+    class FileWriter :
         ICommandHandler<PlaceFile>,
         ICommandHandler<CopyFiles>,
         ICommandHandler<HandleDuplicate>
     {
-        static Dictionary<string, FilePlace> places = new Dictionary<string, FilePlace>();
+        static Dictionary<string, FileFolderWriter> places = new Dictionary<string, FileFolderWriter>();
 
-        static FilePlace Get(DateTime date)
+        FileFolderWriter Get(DateTime date)
         {
             var key = date.ToFolder();
 
             if (!places.ContainsKey(key))
             {
-                places.Add(date.ToFolder(), new FilePlace(date));                
+                places.Add(date.ToFolder(), new FileFolderWriter(date));                
             }
                 
             return places[key];
         }
 
-        static FilePlace Get(PlaceFile cmd)
+        FileFolderWriter Get(PlaceFile cmd)
         {
             return Get(cmd.TakenAt.HasValue ? cmd.TakenAt.Value : new DateTime(0));
         }
@@ -66,7 +66,7 @@ namespace SortMyFiles
         }
     }
 
-    class FilePlace :
+    class FileFolderWriter :
         ICommandHandler<PlaceFile>,
         ICommandHandler<CopyFiles>        
     {
@@ -74,7 +74,7 @@ namespace SortMyFiles
         string folder;
         Dictionary<Guid, Tuple<Guid, FileInfo, TargetFileInfo, string>> store = new Dictionary<Guid, Tuple<Guid, FileInfo, TargetFileInfo, string>>();
         
-        public FilePlace(DateTime _key)
+        public FileFolderWriter(DateTime _key)
         {
             key = _key;
             folder = key.ToFolder();
