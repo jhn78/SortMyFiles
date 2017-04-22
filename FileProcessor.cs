@@ -12,11 +12,16 @@ namespace SortMyFiles
 {
     public class FileProcessor : 
         ICommandHandler<FilterFile>,
-        ICommandHandler<AnalyzeFile>
+        ICommandHandler<AnalyzeFile>        
     {
         public IEnumerable<IEvent> Handle(AnalyzeFile cmd)
         {
-            yield return new FileDateDetermined() { FileDate = getDate(cmd.File), CorrelationId = cmd.CorrelationId };
+            var date = getDate(cmd.File);
+
+            if (date.HasValue)
+                yield return new FileDateDetermined() { FileDate = date.Value, CorrelationId = cmd.CorrelationId };
+            else
+                yield return new FileDateNotDetermined() { CorrelationId = cmd.CorrelationId };
         }
 
         public IEnumerable<IEvent> Handle(FilterFile cmd)

@@ -8,14 +8,43 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    class FilePlaceManager
+    class FileWriter :
+        ICommandHandler<PlaceFile>,
+        ICommandHandler<CopyFiles>,
+        ICommandHandler<HandleDuplicate>
     {
-        public static IEnumerable<IEvent> Handle(PlaceFile cmd)
+        static Dictionary<string, FileFolderWriter> places = new Dictionary<string, FileFolderWriter>();
+
+        FileFolderWriter Get(DateTime date)
+        {
+            var key = date.ToFolder();
+
+            if (!places.ContainsKey(key))
+            {
+                places.Add(date.ToFolder(), new FileFolderWriter(date));                
+            }
+                
+            return places[key];
+        }
+
+        FileFolderWriter Get(PlaceFile cmd)
+        {
+            return Get(cmd.TakenAt.HasValue ? cmd.TakenAt.Value : new DateTime(0));
+        }
+
+        public IEnumerable<IEvent> Handle(HandleDuplicate cmd)
+        {
+            Console.WriteLine($"duplicate detected  {cmd.TargetFile.File.Name}");
+
+            yield break;
+        }
+
+        public IEnumerable<IEvent> Handle(PlaceFile cmd)
         {
             return Get(cmd).Handle(cmd);
         }
 
-        public static IEnumerable<IEvent> Handle(CopyFiles cmd)
+        public IEnumerable<IEvent> Handle(CopyFiles cmd)
         {
             var moved = places.Values
                 .SelectMany(p => p.Handle(cmd))
@@ -24,41 +53,31 @@ namespace SortMyFiles
                 .ToList();
 
             yield return new FilesCopied() { Files = moved, CorrelationId = cmd.CorrelationId };
-        }
-
-        static Dictionary<DateTime, FilePlace> places = new Dictionary<DateTime, FilePlace>();
-
-        public static FilePlace Get(DateTime date)
-        {
-            var key = new DateTime(date.Year, date.Month, 1);
-
-            if (!places.ContainsKey(key))
-                places.Add(key, new FilePlace(key));
-
-            return places[key];
-        }
-
-        public static FilePlace Get(PlaceFile cmd)
-        {
-            return Get(cmd.TakenAt.HasValue ? cmd.TakenAt.Value : new DateTime(0));
-        }
+        }        
     }
 
-    class FilePlace :
-        ICommandHandler<PlaceFile>,
-        ICommandHandler<CopyFiles>
+    static class DatetimeEx
     {
         static string BasePath = @"e:\_test_\out";
 
+        public static string ToFolder(this DateTime dt)
+        {
+            return Path.Combine(BasePath, $"{dt.Year.ToString("0000")}_{dt.Month.ToString("00")}");
+        }
+    }
+
+    class FileFolderWriter :
+        ICommandHandler<PlaceFile>,
+        ICommandHandler<CopyFiles>        
+    {
         DateTime key;
         string folder;
         Dictionary<Guid, Tuple<Guid, FileInfo, TargetFileInfo, string>> store = new Dictionary<Guid, Tuple<Guid, FileInfo, TargetFileInfo, string>>();
-
-
-        public FilePlace(DateTime _key)
+        
+        public FileFolderWriter(DateTime _key)
         {
             key = _key;
-            folder = Path.Combine(BasePath, $"{key.Year.ToString("0000")}_{key.Month.ToString("00")}");
+            folder = key.ToFolder();
         }
 
         public IEnumerable<IEvent> Handle(CopyFiles command)
@@ -110,6 +129,6 @@ namespace SortMyFiles
                     return Encoding.UTF8.GetString(md5.ComputeHash(stream));
                 }
             }
-        }
+        }        
     }    
 }
