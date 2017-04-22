@@ -19,7 +19,7 @@ namespace SortMyFiles
         {
             var moved = places.Values
                 .SelectMany(p => p.Handle(cmd))
-                .OfType<FilesCopied>()
+                .OfType<FilesCopied>() 
                 .SelectMany(p => p.Files)
                 .ToList();
 

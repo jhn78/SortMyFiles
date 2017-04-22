@@ -21,20 +21,7 @@ namespace SortMyFiles
             var fs = new FileStorage();
             var fp = new FileProcessor();
 
-            Queue.Register<ReadFiles>().Subscribe(m =>
-            {
-                var ff = new FileReader().Handle(m);
-
-                if (ff.Count() == 0) { 
-                    Console.WriteLine($"no files found at {SourcePath}");
-                    return;
-                }
-                
-                Queue.PublishAll(ff);
-
-                Queue.Publish(new SourceFilesRead() { CorrelationId = id });                
-            });
-
+            Queue.Register<ReadFiles>().Subscribe(m => Queue.PublishAll(new FileReader().Handle(m)));
             Queue.Register<FileFound>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
             Queue.Register<FilterFile>().Subscribe(m => Queue.PublishAll(fp.Handle(m)));
             Queue.Register<FileFiltered>().Subscribe(m => Queue.PublishAll(fs.Handle(m)));
@@ -48,7 +35,7 @@ namespace SortMyFiles
             Queue.Register<FilesCopied>().Subscribe(m => Console.WriteLine("done"));
 
             Queue.Publish(new ReadFiles() { RootPath = SourcePath });
-
+            
             Console.ReadKey();
         }
     }
