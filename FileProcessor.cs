@@ -11,15 +11,15 @@ using System.Text.RegularExpressions;
 namespace SortMyFiles
 {
     public class FileProcessor : 
-        ICommandHandler<FilterFile, FileFiltered>,
-        ICommandHandler<AnalyzeFile, FileDateDetermined>
+        ICommandHandler<FilterFile>,
+        ICommandHandler<AnalyzeFile>
     {
-        public IEnumerable<FileDateDetermined> Handle(AnalyzeFile cmd)
+        public IEnumerable<IEvent> Handle(AnalyzeFile cmd)
         {
             yield return new FileDateDetermined() { FileDate = getDate(cmd.File), CorrelationId = cmd.CorrelationId };
         }
 
-        public IEnumerable<FileFiltered> Handle(FilterFile cmd)
+        public IEnumerable<IEvent> Handle(FilterFile cmd)
         {
             yield return new FileFiltered() { CorrelationId = cmd.CorrelationId, KeepFile = isSortableFile(cmd.File) };            
         }

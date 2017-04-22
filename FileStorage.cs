@@ -7,31 +7,31 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    public interface ICommandHandler<ICommand, IEvent>
+    public interface ICommandHandler<TCommand> where TCommand : ICommand
     {
-        IEnumerable<IEvent> Handle(ICommand command);
+        IEnumerable<IEvent> Handle(TCommand command);
     }
 
-    public interface IEventHandler<IEvent, ICommand>
+    public interface IEventHandler<TEvent> where TEvent : IEvent
     {
-        IEnumerable<ICommand> Handle(IEvent evt);
+        IEnumerable<ICommand> Handle(TEvent evt);
     }
 
     public class FileStorage : 
-        IEventHandler<FileFound, FilterFile>,        
-        IEventHandler<SourceFilesRead, CopyFiles>,
-        IEventHandler<FileDateDetermined, PlaceFile>,
-        IEventHandler<FileFiltered, AnalyzeFile>,
-        IEventHandler<FilePlaced, HandleDuplicate>
+        IEventHandler<FileFound>,        
+        IEventHandler<SourceFilesRead>,
+        IEventHandler<FileDateDetermined>,
+        IEventHandler<FileFiltered>,
+        IEventHandler<FilePlaced>
     {
         Dictionary<Guid, FileInfo> store = new Dictionary<Guid, FileInfo>();
 
-        public IEnumerable<PlaceFile> Handle(FileDateDetermined evt)
+        public IEnumerable<ICommand> Handle(FileDateDetermined evt)
         {
             yield return new PlaceFile() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TakenAt = evt.FileDate };
         }
 
-        public IEnumerable<HandleDuplicate> Handle(FilePlaced evt)
+        public IEnumerable<ICommand> Handle(FilePlaced evt)
         {
             if (!evt.IsDuplicate) { 
                 yield return null;
@@ -41,7 +41,7 @@ namespace SortMyFiles
             yield return new HandleDuplicate() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TargetFile = evt.Target };
         }
 
-        public IEnumerable<AnalyzeFile> Handle(FileFiltered evt)
+        public IEnumerable<ICommand> Handle(FileFiltered evt)
         {
             var file = store[evt.CorrelationId];
 
@@ -57,16 +57,16 @@ namespace SortMyFiles
             yield break;
         }
         
-        public IEnumerable<FilterFile> Handle(FileFound cmd)
+        public IEnumerable<ICommand> Handle(FileFound cmd)
         {
             store.Add(cmd.CorrelationId, cmd.File);
 
             yield return new FilterFile { File = cmd.File, CorrelationId = cmd.CorrelationId };
         }
 
-        public IEnumerable<CopyFiles> Handle(SourceFilesRead cmd)
+        public IEnumerable<ICommand> Handle(SourceFilesRead cmd)
         {
             yield return new CopyFiles() { CorrelationId = cmd.CorrelationId };
-        }
+        }        
     }
 }

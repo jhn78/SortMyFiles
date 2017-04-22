@@ -10,15 +10,16 @@ namespace SortMyFiles
 {
     class FilePlaceManager
     {
-        public static IEnumerable<FilePlaced> Handle(PlaceFile cmd)
+        public static IEnumerable<IEvent> Handle(PlaceFile cmd)
         {
             return Get(cmd).Handle(cmd);
         }
 
-        public static IEnumerable<FilesCopied> Handle(CopyFiles cmd)
+        public static IEnumerable<IEvent> Handle(CopyFiles cmd)
         {
             var moved = places.Values
-                .SelectMany(p => p.Handle(cmd))                
+                .SelectMany(p => p.Handle(cmd))
+                .OfType<FilesCopied>()
                 .SelectMany(p => p.Files)
                 .ToList();
 
@@ -44,8 +45,8 @@ namespace SortMyFiles
     }
 
     class FilePlace :
-        ICommandHandler<PlaceFile, FilePlaced>,
-        ICommandHandler<CopyFiles, FilesCopied>
+        ICommandHandler<PlaceFile>,
+        ICommandHandler<CopyFiles>
     {
         static string BasePath = @"e:\_test_\out";
 
@@ -60,7 +61,7 @@ namespace SortMyFiles
             folder = Path.Combine(BasePath, $"{key.Year.ToString("0000")}_{key.Month.ToString("00")}");
         }
 
-        public IEnumerable<FilesCopied> Handle(CopyFiles command)
+        public IEnumerable<IEvent> Handle(CopyFiles command)
         {
             Directory.CreateDirectory(folder);
 
@@ -76,7 +77,7 @@ namespace SortMyFiles
             yield return new FilesCopied() { Files = moved, CorrelationId = command.CorrelationId };
         }
 
-        public IEnumerable<FilePlaced> Handle(PlaceFile command)
+        public IEnumerable<IEvent> Handle(PlaceFile command)
         {
             var md5 = getMD5(command.File);
 
