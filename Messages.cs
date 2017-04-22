@@ -20,7 +20,7 @@ namespace SortMyFiles
     {
 
     }
-    
+
     public class FileFound : IEvent
     {
         public FileInfo File { get; set; }

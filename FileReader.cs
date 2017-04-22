@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SortMyFiles
 {
-    class FileReader 
+    class FileReader : ICommandHandler<ReadFiles, FileFound>
     {
         public IEnumerable<FileFound> Handle(ReadFiles cmd)
         {

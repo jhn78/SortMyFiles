@@ -22,4 +22,12 @@ namespace SortMyFiles
             _inner.OnNext(message);
         }
     }
+
+    public static class QueueEx
+    {
+        public static void PublishAll<T>(this Queue q, IEnumerable<T> messages)
+        {
+            messages.ToList().ForEach(m => q.Publish(m));
+        }
+    }
 }

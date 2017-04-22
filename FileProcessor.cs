@@ -14,14 +14,14 @@ namespace SortMyFiles
         ICommandHandler<FilterFile, FileFiltered>,
         ICommandHandler<AnalyzeFile, FileDateDetermined>
     {
-        public FileDateDetermined Handle(AnalyzeFile cmd)
+        public IEnumerable<FileDateDetermined> Handle(AnalyzeFile cmd)
         {
-            return new FileDateDetermined() { FileDate = getDate(cmd.File), CorrelationId = cmd.CorrelationId };
+            yield return new FileDateDetermined() { FileDate = getDate(cmd.File), CorrelationId = cmd.CorrelationId };
         }
 
-        public FileFiltered Handle(FilterFile cmd)
+        public IEnumerable<FileFiltered> Handle(FilterFile cmd)
         {
-            return new FileFiltered() { CorrelationId = cmd.CorrelationId, KeepFile = isSortableFile(cmd.File) };            
+            yield return new FileFiltered() { CorrelationId = cmd.CorrelationId, KeepFile = isSortableFile(cmd.File) };            
         }
 
         bool isSortableFile(FileInfo file)
