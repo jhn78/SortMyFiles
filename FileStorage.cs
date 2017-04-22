@@ -35,9 +35,7 @@ namespace SortMyFiles
         {
             if (!evt.IsDuplicate)
                 return null;
-
-            Console.WriteLine("duplicate detected");
-
+            
             return new HandleDuplicate() { CorrelationId = evt.CorrelationId, File = store[evt.CorrelationId], TargetFile = evt.Target };
         }
 
